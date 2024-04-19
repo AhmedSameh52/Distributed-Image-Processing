@@ -21,10 +21,7 @@ try:
     print("Uploading pip.sh...")
     scp.put('D:/pip.sh', '/home/ubuntu/pip.sh')
     print("pip.sh uploaded.")
-
-    print("Uploading rename-photo.py...")
-    scp.put('D:/rename-photo.py', '/home/ubuntu/rename-photo.py')
-    print("rename-photo.py uploaded.")
+    
 
     scp.close()
     print("SCP client closed.")
@@ -33,8 +30,6 @@ try:
     commands = [
         'chmod +x /home/ubuntu/pip.sh',
         '/home/ubuntu/pip.sh',  # Execute the install script
-        'chmod +x /home/ubuntu/rename-photo.py',
-        'python3 /home/ubuntu/rename-photo.py'  # Execute the Python script
     ]
 
     for command in commands:
