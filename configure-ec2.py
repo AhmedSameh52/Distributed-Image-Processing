@@ -3,7 +3,7 @@ import boto3
 from paramiko import SSHClient
 from scp import SCPClient
 # Connection details
-ip_address = '18.153.79.185'
+ip_address = '3.65.176.111'
 username = 'ubuntu'
 key_filename = 'D:/myEC2Key.pem'
 
@@ -19,7 +19,7 @@ try:
 
     # Upload the Python script
     print("Uploading pip.sh...")
-    scp.put('D:/pip.sh', '/home/ubuntu/pip.sh')
+    scp.put('D:/Ain Shams/Spring 24 Senior 1/Distributed/Distributed-Image-Processing/pip.sh', '/home/ubuntu/pip.sh')
     print("pip.sh uploaded.")
     
 
@@ -33,15 +33,22 @@ try:
     ]
 
     for command in commands:
-        stdin, stdout, stderr = ssh.exec_command(command)
-        stdout.channel.recv_exit_status()  # This line ensures the command completes before moving to the next one
-        output = stdout.read().decode()
+        print(f"Executing: {command}")
+        # Execute the command
+        stdin, stdout, stderr = ssh.exec_command(command, get_pty=True)
+    
+        # Read the output as it becomes available
+        for line in iter(stdout.readline, ""):
+            print(line, end="")  # Print each line of the stdout
+        
+        # Check for any errors
         errors = stderr.read().decode()
-
-        if output:
-            print(f"Output from {command}: {output}")
         if errors:
-            print(f"Errors from {command}: {errors}")
+            print("ERRORS:")
+            print(errors)
+    
+        # Ensure the command has completed
+        stdout.channel.recv_exit_status()
 
 finally:
     # Close the SSH connection

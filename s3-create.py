@@ -19,5 +19,7 @@ location = {'LocationConstraint': session.region_name}
 # Create the bucket
 s3_client.create_bucket(Bucket=bucket_name, CreateBucketConfiguration=location)
 
+
+
 print(f"Bucket '{bucket_name}' created successfully in region '{session.region_name}'.")
 

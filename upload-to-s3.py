@@ -3,7 +3,7 @@ import boto3
 session = boto3.Session(
     aws_access_key_id='AKIAQ3EGVEQVPCS7DYM5',
     aws_secret_access_key='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',
-    region_name='eu-central-1'  # Assuming you want to create the bucket in the Frankfurt region
+    region_name='us-east-1'  # Assuming you want to create the bucket in the Frankfurt region
 )
 
 # Create an S3 client using the established session
