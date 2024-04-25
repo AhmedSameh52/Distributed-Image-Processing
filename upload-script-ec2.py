@@ -3,7 +3,7 @@ import boto3
 from paramiko import SSHClient
 from scp import SCPClient
 # Connection details
-ip_address = '18.192.211.215'
+ip_address = '3.127.221.199'
 username = 'ubuntu'
 key_filename = 'D:/myEC2Key.pem'
 
@@ -32,7 +32,7 @@ try:
         # 'echo "18.195.6.19 slots=1" >> hostfile',
         # 'mpirun -np 1 --hostfile /home/ubuntu/hostfile python3 /home/ubuntu/master-thread.py'   
         'chmod +x /home/ubuntu/process-image.py', 
-        'python3 /home/ubuntu/process-image.py '
+        'python3 /home/ubuntu/process-image.py mohamed-beta2a1.jpg grayscale 0'
 
     ]
 
@@ -58,10 +58,6 @@ finally:
     # Close the SSH connection
     ssh.close()
 
-
-
-
-    
         # 'export OMPI_MCA_btl_tcp_if_include=eth0',
         # 'mpiexec -n 1 python3 /home/ubuntu/test-mpi.py'
         # 'mpiexec --host localhost,3.71.203.243 -n 1 --verbose python3 /home/ubuntu/test-mpi.py',

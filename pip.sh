@@ -17,10 +17,19 @@ echo 'Python installed'
 sudo -H pip3 install boto3
 echo 'boto3 installed'
 
+#Install opencv
+sudo -H pip3 install opencv-python
+
+#Install Numpy
+sudo -H pip3 install numpy
+
 #Install mpi4py
 sudo apt-get -y install openmpi-bin openmpi-common libopenmpi-dev
 sudo -H pip3 install mpi4py
 echo 'MPI installed'
+
+# Install openGL
+sudo apt-get -y install libgl1-mesa-glx
 
 # Verify installation
 python3 -c "import boto3; print(boto3.__version__)"
