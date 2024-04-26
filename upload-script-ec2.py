@@ -3,7 +3,7 @@ import boto3
 from paramiko import SSHClient
 from scp import SCPClient
 # Connection details
-ip_address = '3.127.221.199'
+ip_address = '3.64.147.215'
 username = 'ubuntu'
 key_filename = 'D:/myEC2Key.pem'
 
@@ -32,7 +32,7 @@ try:
         # 'echo "18.195.6.19 slots=1" >> hostfile',
         # 'mpirun -np 1 --hostfile /home/ubuntu/hostfile python3 /home/ubuntu/master-thread.py'   
         'chmod +x /home/ubuntu/process-image.py', 
-        'python3 /home/ubuntu/process-image.py mohamed-beta2a1.jpg grayscale 0'
+        'sudo python3 /home/ubuntu/process-image.py'
 
     ]
 

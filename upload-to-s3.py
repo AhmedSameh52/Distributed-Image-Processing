@@ -11,6 +11,6 @@ s3_client = session.client('s3')
 
 # Bucket name must be unique for all S3 users
 bucket_name = 'test-s3-bucket-v145677344566'
-file_name = 'C:/Users/mdamr/OneDrive/Pictures/Screenshot 2023-07-25 181215.png'
-object_name = 'mohamed-beta2a1.jpg'
-s3_client.upload_file(file_name, bucket_name, object_name)
+file_name1 = 'D:/test-case-4.png'
+object_name = 'test-case-4.jpg'
+s3_client.upload_file(file_name1, bucket_name, object_name)

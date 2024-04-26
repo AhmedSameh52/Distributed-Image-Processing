@@ -3,6 +3,9 @@ import numpy as np
 import boto3
 import sys
 import os
+from flask import Flask, request, jsonify
+import requests
+
 
 
 def init():
@@ -49,7 +52,7 @@ def process_image(operation, image,image_parameter):
     
     return result
 
-def upload_photo_to_s3(processed_image,s3_bucket,image_key):
+def upload_photo_to_s3(processed_image,s3_bucket,image_key,s3_client):
     image_key = image_key.replace('.jpg', '', 1)
     processed_image_name = image_key + '_processed.jpg'
     image_path = '/home/ubuntu/'+processed_image_name
@@ -58,15 +61,40 @@ def upload_photo_to_s3(processed_image,s3_bucket,image_key):
     os.remove(image_path)
 
 
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Welcome to the Load Balanced EC2 instance!"
+
+@app.route('/data', methods=['GET', 'POST'])
+def data():
+    if request.method == 'POST':
+        content = request.json
+
+        # Parse content
+        image_key = content.get('imagekey', 'none')
+        image_operation = content.get('imageoperation', 'none')
+        image_parameter = content.get('imageparameter', 'none')
+        s3_client = init()
+        bucket_name = 'test-s3-bucket-v145677344566'  
+        image = get_image_from_bucket(s3_client, image_key)
+        processed_image = process_image(image_operation, image ,image_parameter)
+        upload_photo_to_s3(processed_image,bucket_name,image_key,s3_client)
+        instance_id = requests.get('http://169.254.169.254/latest/meta-data/instance-id').text
+        return jsonify({"received": content,"Instance ID": instance_id}), 201
+    else:
+        return jsonify({"message": "Send me some data!"})
+    
 if __name__ == "__main__":
-    image_key = sys.argv[1] #s3 bucket file 
-    image_operation = sys.argv[2] #image processing operation
-    image_parameter = sys.argv[3]
-    s3_client = init()
-    bucket_name = 'test-s3-bucket-v145677344566'  
-    image = get_image_from_bucket(s3_client, image_key)
-    processed_image = process_image(image_operation, image ,image_parameter)
-    upload_photo_to_s3(processed_image,bucket_name,image_key)
+    # Run the Flask app
+    app.run(host='0.0.0.0', port=80)
+
     
     
     
+
+
+    # image_key = sys.argv[1] #s3 bucket file 
+    # image_operation = sys.argv[2] #image processing operation
+    # image_parameter = sys.argv[3]
