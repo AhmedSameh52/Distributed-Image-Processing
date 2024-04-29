@@ -10,8 +10,8 @@ import requests
 
 def init():
     session = boto3.Session(
-                aws_access_key_id='AKIAQ3EGVEQVPCS7DYM5',  # Replace with your actual key
-                aws_secret_access_key='AJKxvyffvusrXGOyDw3KVi6pz/njYBnore0mlxyE',  # Replace with your actual secret key
+                aws_access_key_id='AKIAQ3EGVEQVPCS7DYM5', 
+                aws_secret_access_key='AJKxvyffvusrXGOyDw3KVi6pz/njYBnore0mlxyE', 
                 region_name='eu-central-1'
             )
     s3_client = session.client('s3')
@@ -37,7 +37,6 @@ def process_image(operation, image,image_parameter):
         result = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     elif operation == 'rotate':
         if image_parameter == '90':
-            # Rotate the image 90 degrees clockwise
             result = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
         elif image_parameter == '180':
             result = cv2.rotate(image, cv2.ROTATE_180)
@@ -45,10 +44,9 @@ def process_image(operation, image,image_parameter):
             result = cv2.rotate(image,cv2.ROTATE_90_COUNTERCLOCKWISE)
     elif operation == 'resize':
         parameter = int(image_parameter)
-        # Resize the image to 256x256
         result = cv2.resize(image, (parameter, parameter))
     else:
-        result = image  # Default: return the original image if no operation specified
+        result = image  
     
     return result
 
@@ -85,6 +83,14 @@ def data():
         return jsonify({"received": content,"Instance ID": instance_id}), 201
     else:
         return jsonify({"message": "Send me some data!"})
+
+
+@app.route('/health')
+def healthcheck():
+    # Perform any necessary health checks here
+    # Return a successful response if the application is healthy
+    return 'OK', 200
+
     
 if __name__ == "__main__":
     # Run the Flask app
@@ -92,9 +98,3 @@ if __name__ == "__main__":
 
     
     
-    
-
-
-    # image_key = sys.argv[1] #s3 bucket file 
-    # image_operation = sys.argv[2] #image processing operation
-    # image_parameter = sys.argv[3]
