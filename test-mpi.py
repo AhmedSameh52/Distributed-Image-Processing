@@ -11,3 +11,4 @@ if rank == 0:
 else:
     data = comm.recv(source=0)
     print(f"Received data on Rank {rank}: {data}")
+    

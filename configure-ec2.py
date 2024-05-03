@@ -3,9 +3,9 @@ import boto3
 from paramiko import SSHClient
 from scp import SCPClient
 # Connection details
-ip_address = '3.64.147.215'
+ip_address = '51.21.150.49'
 username = 'ubuntu'
-key_filename = 'D:/myEC2Key.pem'
+key_filename = 'D:/myKeyPairSweden.pem'
 
 # Initialize SSH client
 ssh = paramiko.SSHClient()
