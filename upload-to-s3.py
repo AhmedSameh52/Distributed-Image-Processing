@@ -8,7 +8,8 @@ session = boto3.Session(
 
 s3_client = session.client('s3')
 
-bucket_name = 'test-s3-bucket-v22222'
-file_name1 = 'D:/test-case-4.jpg'
-object_name = 'test-case-4.jpg'
+bucket_name = 'test-s3-bucket-v12345'
+file_name1 = 'D:/test-case-5.png'
+object_name = 'test-case-5.png'
 s3_client.upload_file(file_name1, bucket_name, object_name)
+

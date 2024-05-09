@@ -3,9 +3,9 @@ import boto3
 from paramiko import SSHClient
 from scp import SCPClient
 # Connection details
-ip_address = '51.21.150.49'
+ip_address = '54.93.94.17'
 username = 'ubuntu'
-key_filename = 'D:/myKeyPairSweden.pem'
+key_filename = 'D:/myEC2Key.pem'
 
 # Initialize SSH client
 ssh = paramiko.SSHClient()
@@ -18,7 +18,7 @@ try:
     print("SCP client established.")
 
     print("Uploading worker-thread.py...")
-    scp.put('D:/Ain Shams/Spring 24 Senior 1/Distributed/Distributed-Image-Processing/test-mpi.py', '/home/ubuntu/test-mpi.py')
+    scp.put('process-image.py', '/home/ubuntu/process-image.py')
     print("worker-thread.py uploaded.")
 
     scp.close()
@@ -31,9 +31,9 @@ try:
         # 'sudo rm /home/ubuntu/hostfile',
         # 'echo "18.195.6.19 slots=1" >> hostfile',
         # 'mpirun -np 1 --hostfile /home/ubuntu/hostfile python3 /home/ubuntu/master-thread.py'   
-        'chmod a+x /home/ubuntu/test-mpi.py', 
-        'mpiexec -n 1 python3 /home/ubuntu/test-mpi.py'
-
+        # 'mpiexec -n 1 python3 /home/ubuntu/test-mpi.py'
+        'sudo chmod a+x /home/ubuntu/process-image.py',
+        'sudo python3 /home/ubuntu/process-image.py'
     ]
 
     for command in commands:
