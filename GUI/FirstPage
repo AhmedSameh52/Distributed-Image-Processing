@@ -5,6 +5,12 @@ from tkinter import ttk
 root = tk.Tk()
 root.title("Enhance IT")
 
+root.columnconfigure(0, weight=1)  # Expanding column
+root.columnconfigure(1, weight=1)  # Expanding column
+root.columnconfigure(2, weight=0)  # Center content column
+root.columnconfigure(3,weight=1)   # Expanding column
+root.columnconfigure(4,weight=1)   # Expanding column
+
 style = ttk.Style()
 style.theme_use('clam')  
 style.configure("CustomColor.Horizontal.TProgressbar", background='#76ABAE', troughcolor='white')
@@ -21,19 +27,20 @@ root.configure(background='#222831')
 
 logo = tk.PhotoImage(file="GUI\Camera.png") 
 logo_label = tk.Label(root, image=logo, bg='#222831')
-logo_label.pack(pady=(100, 10))
+logo_label.grid(row=0, column=2, pady=(100,20))
 
 # Create label for "Enhance IT"
 label = tk.Label(root, text="Enhance IT", font=('Jua', 24, 'bold'), fg="white", bg='#222831')
-label.pack()
+label.grid(row=1,column=2)
+
 
 # Progress bar widget
 progress = ttk.Progressbar(root, style="CustomColor.Horizontal.TProgressbar", orient='horizontal', length=600, mode='determinate')
-progress.pack(pady=20)
+progress.grid(row=2, column=2, pady=(20,10))
 
 
 label = tk.Label(root, text="Creating Load Balancer", font=('Jua', 24, 'bold'), fg="white", bg='#222831')
-label.pack(pady=20)
+label.grid(row=3,column=1,columnspan=4)
 
 # Function to simulate loading
 def bar():
