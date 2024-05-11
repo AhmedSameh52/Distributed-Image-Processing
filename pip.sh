@@ -8,8 +8,6 @@ sudo apt install -y python3-opencv
 sudo apt install -y python3-boto3
 sudo apt install -y python3-flask
 sudo apt install -y python3-numpy
-sudo apt-get -y install openmpi-bin openmpi-common libopenmpi-dev
-sudo apt install -y python3-mpi4py
 
 
 

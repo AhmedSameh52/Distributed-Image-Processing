@@ -15,7 +15,7 @@ async def main():
     json_datas = [
         {'imagekey': 'test-case-1.png', 'imageoperation': 'closing', 'imageparameter': '5'},
         {'imagekey': 'test-case-2.png', 'imageoperation': 'contour', 'imageparameter': '0'},
-        {'imagekey': 'test-case-3.png', 'imageoperation': 'line_detection', 'imageparameter': '0'},
+        {'imagekey': 'test-case-5.png', 'imageoperation': 'line_detection', 'imageparameter': '0'},
         {'imagekey': 'test-case-4.png', 'imageoperation': 'opening', 'imageparameter': '5'},
     ]
     
