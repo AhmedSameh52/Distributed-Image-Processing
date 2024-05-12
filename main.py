@@ -5,6 +5,7 @@ from configure_ec2 import configure_ec2_instance
 from upload_script_ec2 import upload_script_ec2
 
 awsInstances = {}
+numRequests = 0
 keyName = 'D:/myEC2Key.pem'
 def init():
     session = boto3.Session(
@@ -52,8 +53,7 @@ def create_ec2_instance(target_group_arn):
         }
     ]
     )
-    thread = threading.Thread(target=upload_script_ec2, args=(public_ip_address,keyName,))
-    thread.start()
+    upload_script_ec2(public_ip_address,keyName)
 
     # upload_script_ec2(public_ip_address,keyName)
     # Register the new instance to the target group
@@ -62,6 +62,49 @@ def create_ec2_instance(target_group_arn):
 
     print("Instance registered to target group:", response)
 
+def get_number_of_instances_in_target_group(target_group_arn):
+    # Initialize the ELBv2 client
+    client,_,_ = init()
+
+    # Describe target health to get information about targets in the target group
+    response = client.describe_target_health(TargetGroupArn=target_group_arn)
+    instance_count = len(response['TargetHealthDescriptions'])
+    return instance_count
+
+
+def scale(scale_interval,threshold, target_group):
+    global numRequests
+    global awsInstances
+    while True:
+        print ('checking to scale..')
+        numVmsRunning = get_number_of_instances_in_target_group(target_group)
+        if numRequests % 5 ==0: # 5 requests per vm
+            numVms = (numRequests // threshold)
+        else:
+            numVms = (numRequests // threshold) + 1 
+        desiredVms = numVms - numVmsRunning
+        print(f'numVmsRunning= {numVmsRunning}, numVms = {numVms}, desiredVms = {desiredVms}, numRequests = {numRequests}')
+        if desiredVms < 0 :
+            desiredVms = desiredVms * -1
+
+            for i in range(desiredVms):
+                if numVmsRunning <= 2:
+                    break
+                terminate_instance(list(awsInstances.keys())[i])
+                numVmsRunning = numVmsRunning -1
+        else:
+            for i in range (desiredVms):
+                thread = threading.Thread(target=create_ec2_instance, args=(target_group,))
+                thread.start()
+        awsInstances = get_instance_health_dict(target_group)
+        numRequests = 0
+        time.sleep(scale_interval)
+
+def terminate_instance(instance_id):
+    # Terminate the instance
+    _,ec2,_ = init()
+    instance = ec2.Instance(instance_id)
+    instance.terminate()
 
 def get_instance_health_dict(target_group_arn):
     client,_,_ = init()
@@ -79,19 +122,22 @@ def get_instance_health_dict(target_group_arn):
 
     return health_dict
 
-def check_and_scale(target_group_arn, threshold,check_interval):
+def fault_tolerance(target_group_arn, threshold,check_interval):
     while True:
         client,_,_ = init()
         response = client.describe_target_health(TargetGroupArn=target_group_arn)
 
-        unhealthy_count = sum(1 for target in response['TargetHealthDescriptions']
-                            if target['TargetHealth']['State'] != 'healthy')
+        healthy_count = sum(1 for target in response['TargetHealthDescriptions']
+                            if target['TargetHealth']['State'] == 'healthy')
 
-        print(f"Unhealthy instances count: {unhealthy_count}")
+        print(f"Unhealthy instances count: {healthy_count}")
 
-        if unhealthy_count >= threshold:
+        if healthy_count < threshold:
             print("Unhealthy instance count is below the threshold. Creating an EC2 instance...")
-            create_ec2_instance(target_group_arn)
+            for i in range(threshold - healthy_count):
+                thread = threading.Thread(target=create_ec2_instance, args=(target_group_arn,))
+                thread.start()
+
         else:
             print("No need to create a new instance. The number of unhealthy instances is not below the threshold.")
         time.sleep(check_interval)  # Wait before checking again
@@ -100,12 +146,21 @@ def check_and_scale(target_group_arn, threshold,check_interval):
 
 
 if __name__ == '__main__':
-
-    check_interval = 120
-    target_group_arn = 'arn:aws:elasticloadbalancing:eu-central-1:058264462378:targetgroup/target-test/59420089f07fdfcf'
-    thread = threading.Thread(target=check_and_scale, args=(target_group_arn,1,check_interval,))
+    check_interval = 360
+    scale_interval = 360
+    threshold = 5
+    target_group_arn = 'arn:aws:elasticloadbalancing:eu-central-1:058264462378:targetgroup/target-group-2/1628f616d766de4d'
+    awsInstances = get_instance_health_dict(target_group_arn)
+    threadScale = threading.Thread(target=scale, args = (scale_interval,threshold,target_group_arn,))
+    thread = threading.Thread(target=fault_tolerance, args=(target_group_arn,2,check_interval,))
+    threadScale.start()
     thread.start()
+    time.sleep(300)
+    numRequests = 20
+    time.sleep(400)
+    numRequests = 5
     thread.join()
+
 
     # create_ec2_instance(target_group_arn)
 

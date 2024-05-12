@@ -12,7 +12,7 @@ ec2 = session.resource('ec2')
 
 # Create a new EC2 instance
 instances = ec2.create_instances(
-    ImageId='ami-0705384c0b33c194c',  # Ensure this AMI ID is available in 'eu-central-1'
+    ImageId='ami-01e444924a2233b07',  # Ensure this AMI ID is available in 'eu-central-1'
     MinCount=1,
     MaxCount=1,
     InstanceType='t2.micro',

@@ -4,9 +4,8 @@ from paramiko import SSHClient
 from scp import SCPClient
 # Connection details
 ip_address = '3.79.62.119'
-username = 'ubuntu'
 key_filename = 'D:/myEC2Key.pem'
-
+username = 'ubuntu'
 # Initialize SSH client
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -17,23 +16,19 @@ try:
     scp = SCPClient(ssh.get_transport())
     print("SCP client established.")
 
-    print("Uploading worker-thread.py...")
-    scp.put('process-image.py', '/home/ubuntu/process-image.py')
-    print("worker-thread.py uploaded.")
+    # Upload the Python script
+    print("Uploading pip.sh...")
+    scp.put('D:/Ain Shams/Spring 24 Senior 1/Distributed/Distributed-Image-Processing/pip.sh', '/home/ubuntu/pip.sh')
+    print("pip.sh uploaded.")
+    
 
     scp.close()
     print("SCP client closed.")
 
     # Make scripts executable and execute them
     commands = [
-        # 'ssh-keygen -t rsa -b 2048',
-        # 'cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys',
-        # 'sudo rm /home/ubuntu/hostfile',
-        # 'echo "18.195.6.19 slots=1" >> hostfile',
-        # 'mpirun -np 1 --hostfile /home/ubuntu/hostfile python3 /home/ubuntu/master-thread.py'   
-        # 'mpiexec -n 1 python3 /home/ubuntu/test-mpi.py'
-        'sudo chmod a+x /home/ubuntu/process-image.py',
-        'sudo python3 /home/ubuntu/process-image.py'
+        'chmod +x /home/ubuntu/pip.sh',
+        '/home/ubuntu/pip.sh',  # Execute the install script
     ]
 
     for command in commands:
@@ -55,11 +50,4 @@ try:
         stdout.channel.recv_exit_status()
 
 finally:
-    # Close the SSH connection
     ssh.close()
-
-        # 'export OMPI_MCA_btl_tcp_if_include=eth0',
-        # 'mpiexec -n 1 python3 /home/ubuntu/test-mpi.py'
-        # 'mpiexec --host localhost,3.71.203.243 -n 1 --verbose python3 /home/ubuntu/test-mpi.py',
-        # 'ping 3.71.203.243'
-        # 'python3 /home/ubuntu/worker-thread.py'
