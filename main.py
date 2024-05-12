@@ -34,9 +34,7 @@ def create_ec2_instance(target_group_arn):
     instance = instances[0]
     instance.wait_until_running()
 
-    # Wait until the instance is reachable (SSH ready)
-    waiter = ec2_client.get_waiter('instance_status_ok')
-    waiter.wait(InstanceIds=[instance.id])
+    time.sleep(30)
 
     # Refresh to get the latest data
     instance.load()
@@ -54,9 +52,11 @@ def create_ec2_instance(target_group_arn):
         }
     ]
     )
-    upload_script_ec2(public_ip_address,keyName)
-    # Register the new instance to the target group
+    thread = threading.Thread(target=upload_script_ec2, args=(public_ip_address,keyName,))
+    thread.start()
 
+    # upload_script_ec2(public_ip_address,keyName)
+    # Register the new instance to the target group
     awsInstances = get_instance_health_dict(target_group_arn)
 
 
@@ -101,11 +101,13 @@ def check_and_scale(target_group_arn, threshold,check_interval):
 
 if __name__ == '__main__':
 
-    check_interval = 300
+    check_interval = 120
     target_group_arn = 'arn:aws:elasticloadbalancing:eu-central-1:058264462378:targetgroup/target-test/59420089f07fdfcf'
-    # thread = threading.Thread(target=check_and_scale, args=(target_group_arn,1,check_interval))
-    # thread.start()
-    create_ec2_instance(target_group_arn)
+    thread = threading.Thread(target=check_and_scale, args=(target_group_arn,1,check_interval,))
+    thread.start()
+    thread.join()
+
+    # create_ec2_instance(target_group_arn)
 
 
 
