@@ -4,7 +4,43 @@ from Componenets import circular_progress_bar
 import customtkinter
 from tkextrafont import Font
 
-awsInstancesDemo = [("1", "healthy"), ("2", "not healthy"), ("3", "healthy"),("1", "healthy"), ("2", "not healthy")]
+awsInstancesDemo = [("1", "healthy"),("1", "healthy"),("1", "healthy"), ("1", "healthy"), ("1", "healthy")]
+logMessages = [
+    "EC2 Instances are Now Processing the Images",
+    "Images Uploaded to S3 Bucket",
+    "EC2 Instance 4 Is Healthy and Ready to Execute",
+    "EC2 Instance 4 Created Successfully",
+    "EC2 Instance 3 Went Down, Creating New Instance Soon....",
+    "EC2 Instance 3 Is Healthy and Ready to Execute",
+]
+
+def on_mouse_down(event):
+    canvas.scan_mark(event.x, 0)
+
+def on_mouse_move(event):
+    # Only scroll if the left mouse button is held down
+    if event.state & 0x100:  # 0x100 corresponds to the left mouse button being down
+        canvas.scan_dragto(event.x, 0, gain=1)
+
+def propagate_to_canvas(event):
+    on_mouse_down(event)
+
+def propagate_move_to_canvas(event):
+    on_mouse_move(event)
+
+def on_mouse_down_logs(event):
+    canvas_logs.scan_mark(0, event.y)
+
+def on_mouse_move_logs(event):
+    # Only scroll if the left mouse button is held down
+    if event.state & 0x100:  # 0x100 corresponds to the left mouse button being down
+        canvas_logs.scan_dragto(0, event.y, gain=1)
+
+def propagate_to_canvas_logs(event):
+    on_mouse_down_logs(event)
+
+def propagate_move_to_canvas_logs(event):
+    on_mouse_move_logs(event)
 
 systemStatus = 0
 # Create the main window
@@ -74,25 +110,25 @@ apply_image = tk.PhotoImage(file="GUI/Images/apply-button.png")
 apply_button = tk.Button(root, image=apply_image, borderwidth=0, highlightthickness=0, highlightbackground="#31363F",activebackground="#31363F")
 apply_button.place(x = 25, y = 500)
 
-systemStatus = 0
+systemStatus = 1
 
 if systemStatus == 0:
     upload_image_label = tk.Label(root, text="Upload Image and Choose an Operation", font=('Jua', 26), fg="white", bg='#242424')
-    upload_image_label.place(x = 330, y = 250)
+    upload_image_label.place(x = 330, y = 230)
 
 elif systemStatus == 1:
     progress_inside = customtkinter.CTkProgressBar(root, orientation="horizontal", width=600, height = 15, progress_color='#76ABAE', fg_color="#EEEEEE", corner_radius=100)
     # progress = ttk.Progressbar(root, style="CustomColor.Horizontal.TProgressbar", orient='horizontal', length=600, mode='determinate')
-    progress_inside.place(x = 325, y = 300)
+    progress_inside.place(x = 325, y = 280)
     progress_bar_label = tk.Label(root, text="Processing...", font=('Jua', 20, 'bold'), fg="white", bg='#242424')
-    progress_bar_label.place(x = 323, y = 250)
+    progress_bar_label.place(x = 323, y = 230)
 elif systemStatus == 2:
     image_finished_label = tk.Label(root, text="Images Finished Processing", font=('Jua', 20, 'bold'), fg="white", bg='#242424')
-    image_finished_label.place(x = 300, y = 250)
+    image_finished_label.place(x = 300, y = 230)
 
     download_images = tk.PhotoImage(file="GUI/Images/download-images-button.png")
     download_images_button = tk.Button(root, image=download_images, borderwidth=0, highlightthickness=0, highlightbackground="#242424",activebackground="#242424")
-    download_images_button.place(x = 700, y = 245)
+    download_images_button.place(x = 700, y = 225)
 
 cloud_server = tk.PhotoImage(file="GUI/Images/cloud-server.png")
 healthy_image = tk.PhotoImage(file="GUI/Images/healthy.png")
@@ -107,13 +143,27 @@ def populateframe(frame):
         label_image.pack(padx=18)
         label_ID_text = tk.Label(instanceframe, text="ID: " + awsInstancesDemo[i][0], bg='#242424', font=font, foreground="#EEEEEE")
         label_ID_text.pack()
+
+        label_image.bind("<ButtonPress-1>", propagate_to_canvas)
+        label_image.bind("<B1-Motion>", propagate_move_to_canvas)
+
+        label_ID_text.bind("<ButtonPress-1>", propagate_to_canvas)
+        label_ID_text.bind("<B1-Motion>", propagate_move_to_canvas)
+
         if awsInstancesDemo[i][1] == "healthy":
             label_healthy_image = tk.Label(instanceframe, image=healthy_image, bg='#242424')
             label_healthy_image.pack()
+            label_healthy_image.bind("<ButtonPress-1>", propagate_to_canvas)
+            label_healthy_image.bind("<B1-Motion>", propagate_move_to_canvas)
         else:
             label_not_healthy_image = tk.Label(instanceframe, image=not_healthy_image, bg='#242424')
             label_not_healthy_image.pack()
+            label_not_healthy_image.bind("<ButtonPress-1>", propagate_to_canvas)
+            label_not_healthy_image.bind("<B1-Motion>", propagate_move_to_canvas)
+
         instanceframe.pack(side=tk.LEFT, padx=10, pady=10)
+        instanceframe.bind("<ButtonPress-1>", propagate_to_canvas)
+        instanceframe.bind("<B1-Motion>", propagate_move_to_canvas)
 
 style = ttk.Style()
 style.theme_use('clam')  # Using a theme that allows color customization
@@ -131,24 +181,82 @@ main_frame.place(x=300, y=20)
 # Create a Canvas and a Scrollbar within the main frame
 canvas = tk.Canvas(main_frame, borderwidth=0, bg="#242424", highlightthickness=0, highlightbackground="#242424")
 
-
+canvas.bind("<ButtonPress-1>", on_mouse_down)  # Left button mouse down
+canvas.bind("<B1-Motion>", on_mouse_move)  # Left button being held down and moved
 
 frame = tk.Frame(canvas, background="#242424", border=0, borderwidth=0)  # This frame will hold your instances
 
-# Adding Scrollbar
-if len(awsInstancesDemo) >= 5:
-    scrollbar = ttk.Scrollbar(main_frame, orient="horizontal", command=canvas.xview, style="Horizontal.TScrollbar", )
-    canvas.configure(xscrollcommand=scrollbar.set,)
-    scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
 canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 #canvas.place(x=300, y=30)
-canvas.create_window((130,0), window=frame, anchor="nw")
+indent = 0
+if len(awsInstancesDemo) == 4:
+    indent = 130
+elif len(awsInstancesDemo) == 3:
+    indent = 90
+elif len(awsInstancesDemo) == 2:
+    indent = 160
+elif len(awsInstancesDemo) == 1:
+    indent = 240
+canvas.create_window((indent,0), window=frame, anchor="nw")
 
 frame.bind("<Configure>", lambda event, canvas=canvas: canvas.configure(scrollregion=canvas.bbox("all")))
 
 populateframe(frame)  # Add your widgets to the fram
 
 logs_label = tk.Label(root, text="LOGS", font=('Jua', 20, 'bold'), fg="white", bg='#242424')
-logs_label.place(x = 280, y = 330)
+logs_label.place(x = 280, y = 315)
+
+
+# LOGS FRAME
+processing_log_image = tk.PhotoImage(file="GUI/Images/processing-log-image.png")
+def populateLogsFrame(frame):
+    for i, (id, health) in enumerate(awsInstancesDemo):
+        instanceframe = tk.Frame(frame, bd=0, relief=tk.RIDGE, bg="#242424")
+        label_image = tk.Label(instanceframe, image=processing_log_image, bg='#242424')  # Example image reference
+        label_image.pack(padx=18)
+        label_image.bind("<ButtonPress-1>", propagate_to_canvas_logs)
+        label_image.bind("<B1-Motion>", propagate_move_to_canvas_logs)
+        # label_ID_text = tk.Label(instanceframe, text="ID: " + id, bg='#242424', font=("Helvetica", 10), foreground="#EEEEEE")
+        # label_ID_text.pack()
+        # if health == "healthy":
+        #     label_healthy_image = tk.Label(instanceframe, image=healthy_image, bg='#242424')  # Example healthy image reference
+        #     label_healthy_image.pack()
+        # else:
+        #     label_not_healthy_image = tk.Label(instanceframe, image=not_healthy_image, bg='#242424')  # Example not healthy image reference
+        #     label_not_healthy_image.pack()
+        instanceframe.pack(side=tk.TOP, padx=10, pady=10)
+
+# Configure the style for a vertical scrollbar
+styleLogs = ttk.Style()
+styleLogs.theme_use('clam')  # Using a theme that allows color customization
+styleLogs.configure("Vertical.TScrollbar", gripcount=0,
+                    background="#31363f", darkcolor="#31363f", lightcolor="#31363f",
+                    troughcolor="#76ABAE", bordercolor="#242424", arrowcolor="#76ABAE")
+style.map('Vertical.TScrollbar',
+    background=[('pressed', '!disabled', '#31363f'), ('active', '#31363f')])
+
+main_frame_logs = tk.Frame(root, height=200, width=700)  # Set the size of the area for the canvas and scrollbar
+main_frame_logs.pack_propagate(False)  # Prevents the frame from resizing to fit its contents
+main_frame_logs.place(x=270, y=360)
+
+canvas_logs = tk.Canvas(main_frame_logs, borderwidth=0, bg="#242424", highlightthickness=0, highlightbackground="#242424")
+
+canvas_logs.bind("<ButtonPress-1>", on_mouse_down_logs)  # Left button mouse down
+canvas_logs.bind("<B1-Motion>", on_mouse_move_logs)  # Left button being held down and moved
+
+frame_logs = tk.Frame(canvas_logs, background="#242424")  # This frame will hold your instances
+
+# Create a vertical scrollbar
+# scrollbar_logs = ttk.Scrollbar(main_frame_logs, orient="vertical", command=canvas_logs.yview, style="Vertical.TScrollbar")
+# canvas_logs.configure(yscrollcommand=scrollbar_logs.set)
+# scrollbar_logs.pack(side=tk.RIGHT, fill=tk.Y)  # Adjust scrollbar to the right side
+canvas_logs.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+canvas_logs.create_window((0, 0), window=frame_logs, anchor="nw")
+
+frame_logs.bind("<Configure>", lambda event, canvas=canvas_logs: canvas.configure(scrollregion=canvas.bbox("all")))
+
+populateLogsFrame(frame_logs)  # Populate the frame with logs
 
 root.mainloop()
+
