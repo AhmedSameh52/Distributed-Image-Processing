@@ -3,3 +3,6 @@ paramiko
 scp
 opencv
 mpi4py
+tk
+customtkinter
+tkextrafont
