@@ -5,13 +5,13 @@ import customtkinter
 from tkextrafont import Font
 
 awsInstancesDemo = [("1", "healthy"),("1", "healthy"),("1", "healthy"), ("1", "healthy"), ("1", "healthy")]
-logMessages = [
-    "EC2 Instances are Now Processing the Images",
-    "Images Uploaded to S3 Bucket",
-    "EC2 Instance 4 Is Healthy and Ready to Execute",
-    "EC2 Instance 4 Created Successfully",
-    "EC2 Instance 3 Went Down, Creating New Instance Soon....",
-    "EC2 Instance 3 Is Healthy and Ready to Execute",
+logMessages =[
+    ("EC2 Instances are Now Processing the Images", "processing")
+    ("Images Uploaded to S3 Bucket", "")
+    ("EC2 Instance 4 Is Healthy and Ready to Execute",)
+    ("EC2 Instance 4 Created Successfully",)
+    ("EC2 Instance 3 Went Down, Creating New Instance Soon....",)
+    ("EC2 Instance 3 Is Healthy and Ready to Execute",)
 ]
 
 def on_mouse_down(event):
@@ -140,7 +140,7 @@ def populateframe(frame):
     for i, (id, health) in enumerate(awsInstancesDemo):
         instanceframe = tk.Frame(frame, bd=0, relief=tk.RIDGE, bg="#242424")
         label_image = tk.Label(instanceframe, image=cloud_server, bg='#242424')
-        label_image.pack(padx=18)
+        label_image.pack(padx=22)
         label_ID_text = tk.Label(instanceframe, text="ID: " + awsInstancesDemo[i][0], bg='#242424', font=font, foreground="#EEEEEE")
         label_ID_text.pack()
 
@@ -209,6 +209,9 @@ logs_label.place(x = 280, y = 315)
 
 # LOGS FRAME
 processing_log_image = tk.PhotoImage(file="GUI/Images/processing-log-image.png")
+finished_log_image = tk.PhotoImage(file="GUI/Images/finished-log-image.png")
+healthy_log_image = tk.PhotoImage(file="GUI/Images/healthy-log-image.png")
+not_healthy_log_image = tk.PhotoImage(file="GUI/Images/not-healthy-log-image.png")
 def populateLogsFrame(frame):
     for i, (id, health) in enumerate(awsInstancesDemo):
         instanceframe = tk.Frame(frame, bd=0, relief=tk.RIDGE, bg="#242424")
