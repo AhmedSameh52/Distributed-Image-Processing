@@ -6,3 +6,4 @@ mpi4py
 tk
 customtkinter
 tkextrafont
+tk-tools

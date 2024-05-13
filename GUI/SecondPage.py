@@ -4,7 +4,7 @@ from Componenets import circular_progress_bar
 import customtkinter
 from tkextrafont import Font
 
-awsInstancesDemo = [("1", "healthy"),("1", "healthy"),("1", "healthy"), ("1", "healthy"), ("1", "healthy")]
+awsInstancesDemo = {"1":  "healthy", "2": "healthy","3": "healthy", "4": "healthy", "5": "healthy"}
 logMessages =[
     ("EC2 Instances are Now Processing the Images", "processing"),
     ("Images Uploaded to S3 Bucket", "finished"),
@@ -31,9 +31,6 @@ def on_mouse_move(event):
         canvas.scan_dragto(event.x, 0, gain=1)
 
 
-
-
-
 def bind_mouse_events_logs(widget):
     """ Bind mouse events to the widget and all its descendants """
     widget.bind("<ButtonPress-1>", on_mouse_down_logs)
@@ -57,33 +54,6 @@ systemStatus = 0
 root = tk.Tk()
 root.title("Enhance IT")
 font = Font(file="GUI\Fonts\Jua.ttf", family="Jua")
-
-root.columnconfigure(0, weight=1)
-root.columnconfigure(1, weight=1)
-root.columnconfigure(2, weight=1)
-root.columnconfigure(3, weight=1)
-root.columnconfigure(4, weight=1)
-root.columnconfigure(5, weight=1)
-root.columnconfigure(6, weight=1)
-root.columnconfigure(7, weight=1)
-root.columnconfigure(8, weight=1)
-root.columnconfigure(9, weight=1)
-root.columnconfigure(10, weight=1)
-root.columnconfigure(11, weight=1)
-root.rowconfigure(0, weight=1)
-root.rowconfigure(1, weight=1)
-root.rowconfigure(2, weight=1)
-root.rowconfigure(3, weight=1)
-root.rowconfigure(4, weight=1)
-root.rowconfigure(5, weight=1)
-root.rowconfigure(6, weight=1)
-root.rowconfigure(7, weight=1)
-root.rowconfigure(8, weight=1)
-root.rowconfigure(9, weight=1)
-root.rowconfigure(10, weight=1)
-root.rowconfigure(11, weight=1)
-root.rowconfigure(12, weight=1)
-root.rowconfigure(13, weight=1)
 
 style = ttk.Style()
 style.theme_use('clam')
@@ -145,16 +115,14 @@ healthy_image = tk.PhotoImage(file="GUI/Images/healthy.png")
 not_healthy_image = tk.PhotoImage(file="GUI/Images/not-healthy.png")
 def populateframe(frame):
     # Example data: You would generate these based on your instances' health
-    statuses = [('Healthy', 'green'), ('Healthy', 'green'), ('Dead', 'red'), ('Healthy', 'green'), ('Healthy', 'green'), ('Healthy', 'green')]
-
-    for i, (id, health) in enumerate(awsInstancesDemo):
+    for id, health  in awsInstancesDemo.items():
         instanceframe = tk.Frame(frame, bd=0, relief=tk.RIDGE, bg="#242424")
         label_image = tk.Label(instanceframe, image=cloud_server, bg='#242424')
         label_image.pack(padx=22)
-        label_ID_text = tk.Label(instanceframe, text="ID: " + awsInstancesDemo[i][0], bg='#242424', font=font, foreground="#EEEEEE")
+        label_ID_text = tk.Label(instanceframe, text="ID: " + id, bg='#242424', font=font, foreground="#EEEEEE")
         label_ID_text.pack()
 
-        if awsInstancesDemo[i][1] == "healthy":
+        if health == "healthy":
             label_healthy_image = tk.Label(instanceframe, image=healthy_image, bg='#242424')
             label_healthy_image.pack()
         else:
