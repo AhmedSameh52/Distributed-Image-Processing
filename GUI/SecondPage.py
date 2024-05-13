@@ -4,6 +4,8 @@ from Componenets import circular_progress_bar
 import customtkinter
 from tkextrafont import Font
 
+awsInstancesDemo = [("1", "healthy"), ("2", "not healthy"), ("3", "healthy"),("1", "healthy"), ("2", "not healthy")]
+
 systemStatus = 0
 # Create the main window
 root = tk.Tk()
@@ -72,34 +74,45 @@ apply_image = tk.PhotoImage(file="GUI/Images/apply-button.png")
 apply_button = tk.Button(root, image=apply_image, borderwidth=0, highlightthickness=0, highlightbackground="#31363F",activebackground="#31363F")
 apply_button.place(x = 25, y = 500)
 
-systemStatus = 2
+systemStatus = 0
 
 if systemStatus == 0:
-    upload_image_label = tk.Label(root, text="Upload Image and Choose an Operation", font=('Jua', 24), fg="white", bg='#242424')
-    upload_image_label.place(x = 350, y = 230)
+    upload_image_label = tk.Label(root, text="Upload Image and Choose an Operation", font=('Jua', 26), fg="white", bg='#242424')
+    upload_image_label.place(x = 330, y = 250)
 
 elif systemStatus == 1:
     progress_inside = customtkinter.CTkProgressBar(root, orientation="horizontal", width=600, height = 15, progress_color='#76ABAE', fg_color="#EEEEEE", corner_radius=100)
     # progress = ttk.Progressbar(root, style="CustomColor.Horizontal.TProgressbar", orient='horizontal', length=600, mode='determinate')
-    progress_inside.place(x = 325, y = 280)
+    progress_inside.place(x = 325, y = 300)
     progress_bar_label = tk.Label(root, text="Processing...", font=('Jua', 20, 'bold'), fg="white", bg='#242424')
-    progress_bar_label.place(x = 323, y = 230)
+    progress_bar_label.place(x = 323, y = 250)
 elif systemStatus == 2:
     image_finished_label = tk.Label(root, text="Images Finished Processing", font=('Jua', 20, 'bold'), fg="white", bg='#242424')
-    image_finished_label.place(x = 300, y = 230)
+    image_finished_label.place(x = 300, y = 250)
 
     download_images = tk.PhotoImage(file="GUI/Images/download-images-button.png")
     download_images_button = tk.Button(root, image=download_images, borderwidth=0, highlightthickness=0, highlightbackground="#242424",activebackground="#242424")
-    download_images_button.place(x = 700, y = 225)
+    download_images_button.place(x = 700, y = 245)
 
+cloud_server = tk.PhotoImage(file="GUI/Images/cloud-server.png")
+healthy_image = tk.PhotoImage(file="GUI/Images/healthy.png")
+not_healthy_image = tk.PhotoImage(file="GUI/Images/not-healthy.png")
 def populateframe(frame):
     # Example data: You would generate these based on your instances' health
     statuses = [('Healthy', 'green'), ('Healthy', 'green'), ('Dead', 'red'), ('Healthy', 'green'), ('Healthy', 'green'), ('Healthy', 'green')]
 
-    for i, (status, color) in enumerate(statuses, start=1):
-        instanceframe = tk.Frame(frame, bd=2, relief=tk.RIDGE, bg="#242424")
-        label = tk.Label(instanceframe, text=f"EC2 Instance {i}\n{status}", bg=color)
-        label.pack(padx=10, pady=10)
+    for i, (id, health) in enumerate(awsInstancesDemo):
+        instanceframe = tk.Frame(frame, bd=0, relief=tk.RIDGE, bg="#242424")
+        label_image = tk.Label(instanceframe, image=cloud_server, bg='#242424')
+        label_image.pack(padx=18)
+        label_ID_text = tk.Label(instanceframe, text="ID: " + awsInstancesDemo[i][0], bg='#242424', font=font, foreground="#EEEEEE")
+        label_ID_text.pack()
+        if awsInstancesDemo[i][1] == "healthy":
+            label_healthy_image = tk.Label(instanceframe, image=healthy_image, bg='#242424')
+            label_healthy_image.pack()
+        else:
+            label_not_healthy_image = tk.Label(instanceframe, image=not_healthy_image, bg='#242424')
+            label_not_healthy_image.pack()
         instanceframe.pack(side=tk.LEFT, padx=10, pady=10)
 
 style = ttk.Style()
@@ -107,29 +120,35 @@ style.theme_use('clam')  # Using a theme that allows color customization
 style.configure("Horizontal.TScrollbar", gripcount=0,
                 background="#31363f", darkcolor="#31363f", lightcolor="#31363f",
                 troughcolor="#76ABAE", bordercolor="#242424", arrowcolor="#76ABAE")
+style.map('Horizontal.TScrollbar',
+    background=[('pressed', '!disabled', '#31363f'), ('active', '#31363f')])
 
 main_frame = tk.Frame(root, height=200, width=600)  # Set the size of the area for the canvas and scrollbar
 main_frame.pack_propagate(False)  # Prevents the frame from resizing to fit its contents
 main_frame.place(x=300, y=20)
 
+
 # Create a Canvas and a Scrollbar within the main frame
 canvas = tk.Canvas(main_frame, borderwidth=0, bg="#242424", highlightthickness=0, highlightbackground="#242424")
+
+
+
 frame = tk.Frame(canvas, background="#242424", border=0, borderwidth=0)  # This frame will hold your instances
 
 # Adding Scrollbar
-scrollbar = ttk.Scrollbar(main_frame, orient="horizontal", command=canvas.xview, style="Horizontal.TScrollbar", )
-canvas.configure(xscrollcommand=scrollbar.set,)
-
-scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+if len(awsInstancesDemo) >= 5:
+    scrollbar = ttk.Scrollbar(main_frame, orient="horizontal", command=canvas.xview, style="Horizontal.TScrollbar", )
+    canvas.configure(xscrollcommand=scrollbar.set,)
+    scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
 canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 #canvas.place(x=300, y=30)
-canvas.create_window((300,30), window=frame, anchor="nw")
+canvas.create_window((130,0), window=frame, anchor="nw")
 
 frame.bind("<Configure>", lambda event, canvas=canvas: canvas.configure(scrollregion=canvas.bbox("all")))
 
 populateframe(frame)  # Add your widgets to the fram
 
 logs_label = tk.Label(root, text="LOGS", font=('Jua', 20, 'bold'), fg="white", bg='#242424')
-logs_label.place(x = 280, y = 310)
+logs_label.place(x = 280, y = 330)
 
 root.mainloop()
