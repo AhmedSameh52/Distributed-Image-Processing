@@ -14,19 +14,34 @@ logMessages = [
     "EC2 Instance 3 Is Healthy and Ready to Execute",
 ]
 
+def bind_mouse_events(widget):
+    """ Bind mouse events to the widget and all its descendants """
+    widget.bind("<ButtonPress-1>", on_mouse_down)
+    widget.bind("<B1-Motion>", on_mouse_move)
+
+    # Apply the same bindings to all child widgets
+    for child in widget.winfo_children():
+        bind_mouse_events(child)
+
 def on_mouse_down(event):
     canvas.scan_mark(event.x, 0)
 
 def on_mouse_move(event):
-    # Only scroll if the left mouse button is held down
-    if event.state & 0x100:  # 0x100 corresponds to the left mouse button being down
+    if event.state & 0x100: 
         canvas.scan_dragto(event.x, 0, gain=1)
 
-def propagate_to_canvas(event):
-    on_mouse_down(event)
 
-def propagate_move_to_canvas(event):
-    on_mouse_move(event)
+
+
+
+def bind_mouse_events_logs(widget):
+    """ Bind mouse events to the widget and all its descendants """
+    widget.bind("<ButtonPress-1>", on_mouse_down_logs)
+    widget.bind("<B1-Motion>", on_mouse_move_logs)
+
+    # Apply the same bindings to all child widgets
+    for child in widget.winfo_children():
+        bind_mouse_events_logs(child)
 
 def on_mouse_down_logs(event):
     canvas_logs.scan_mark(0, event.y)
@@ -36,11 +51,6 @@ def on_mouse_move_logs(event):
     if event.state & 0x100:  # 0x100 corresponds to the left mouse button being down
         canvas_logs.scan_dragto(0, event.y, gain=1)
 
-def propagate_to_canvas_logs(event):
-    on_mouse_down_logs(event)
-
-def propagate_move_to_canvas_logs(event):
-    on_mouse_move_logs(event)
 
 systemStatus = 0
 # Create the main window
@@ -144,26 +154,15 @@ def populateframe(frame):
         label_ID_text = tk.Label(instanceframe, text="ID: " + awsInstancesDemo[i][0], bg='#242424', font=font, foreground="#EEEEEE")
         label_ID_text.pack()
 
-        label_image.bind("<ButtonPress-1>", propagate_to_canvas)
-        label_image.bind("<B1-Motion>", propagate_move_to_canvas)
-
-        label_ID_text.bind("<ButtonPress-1>", propagate_to_canvas)
-        label_ID_text.bind("<B1-Motion>", propagate_move_to_canvas)
-
         if awsInstancesDemo[i][1] == "healthy":
             label_healthy_image = tk.Label(instanceframe, image=healthy_image, bg='#242424')
             label_healthy_image.pack()
-            label_healthy_image.bind("<ButtonPress-1>", propagate_to_canvas)
-            label_healthy_image.bind("<B1-Motion>", propagate_move_to_canvas)
         else:
             label_not_healthy_image = tk.Label(instanceframe, image=not_healthy_image, bg='#242424')
             label_not_healthy_image.pack()
-            label_not_healthy_image.bind("<ButtonPress-1>", propagate_to_canvas)
-            label_not_healthy_image.bind("<B1-Motion>", propagate_move_to_canvas)
 
         instanceframe.pack(side=tk.LEFT, padx=10, pady=10)
-        instanceframe.bind("<ButtonPress-1>", propagate_to_canvas)
-        instanceframe.bind("<B1-Motion>", propagate_move_to_canvas)
+        bind_mouse_events(instanceframe)
 
 style = ttk.Style()
 style.theme_use('clam')  # Using a theme that allows color customization
@@ -185,6 +184,7 @@ canvas.bind("<ButtonPress-1>", on_mouse_down)  # Left button mouse down
 canvas.bind("<B1-Motion>", on_mouse_move)  # Left button being held down and moved
 
 frame = tk.Frame(canvas, background="#242424", border=0, borderwidth=0)  # This frame will hold your instances
+bind_mouse_events(frame)
 
 canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 #canvas.place(x=300, y=30)
@@ -214,8 +214,6 @@ def populateLogsFrame(frame):
         instanceframe = tk.Frame(frame, bd=0, relief=tk.RIDGE, bg="#242424")
         label_image = tk.Label(instanceframe, image=processing_log_image, bg='#242424')  # Example image reference
         label_image.pack(padx=18)
-        label_image.bind("<ButtonPress-1>", propagate_to_canvas_logs)
-        label_image.bind("<B1-Motion>", propagate_move_to_canvas_logs)
         # label_ID_text = tk.Label(instanceframe, text="ID: " + id, bg='#242424', font=("Helvetica", 10), foreground="#EEEEEE")
         # label_ID_text.pack()
         # if health == "healthy":
@@ -225,6 +223,7 @@ def populateLogsFrame(frame):
         #     label_not_healthy_image = tk.Label(instanceframe, image=not_healthy_image, bg='#242424')  # Example not healthy image reference
         #     label_not_healthy_image.pack()
         instanceframe.pack(side=tk.TOP, padx=10, pady=10)
+        bind_mouse_events_logs(instanceframe)
 
 # Configure the style for a vertical scrollbar
 styleLogs = ttk.Style()
@@ -255,6 +254,8 @@ canvas_logs.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 canvas_logs.create_window((0, 0), window=frame_logs, anchor="nw")
 
 frame_logs.bind("<Configure>", lambda event, canvas=canvas_logs: canvas.configure(scrollregion=canvas.bbox("all")))
+
+bind_mouse_events_logs(frame_logs)
 
 populateLogsFrame(frame_logs)  # Populate the frame with logs
 
