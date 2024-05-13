@@ -6,12 +6,12 @@ from tkextrafont import Font
 
 awsInstancesDemo = [("1", "healthy"),("1", "healthy"),("1", "healthy"), ("1", "healthy"), ("1", "healthy")]
 logMessages =[
-    ("EC2 Instances are Now Processing the Images", "processing")
-    ("Images Uploaded to S3 Bucket", "")
-    ("EC2 Instance 4 Is Healthy and Ready to Execute",)
-    ("EC2 Instance 4 Created Successfully",)
-    ("EC2 Instance 3 Went Down, Creating New Instance Soon....",)
-    ("EC2 Instance 3 Is Healthy and Ready to Execute",)
+    ("EC2 Instances are Now Processing the Images", "processing"),
+    ("Images Uploaded to S3 Bucket", "finished"),
+    ("EC2 Instance 4 Is Healthy and Ready to Execute", "healthy"),
+    ("EC2 Instance 4 Created Successfully", "finished"),
+    ("EC2 Instance 3 Went Down, Creating New Instance Soon....", "not healthy"),
+    ("EC2 Instance 3 Is Healthy and Ready to Execute", "healthy"),
 ]
 
 def bind_mouse_events(widget):
@@ -211,14 +211,23 @@ logs_label.place(x = 280, y = 315)
 processing_log_image = tk.PhotoImage(file="GUI/Images/processing-log-image.png")
 finished_log_image = tk.PhotoImage(file="GUI/Images/finished-log-image.png")
 healthy_log_image = tk.PhotoImage(file="GUI/Images/healthy-log-image.png")
-not_healthy_log_image = tk.PhotoImage(file="GUI/Images/not-healthy-log-image.png")
+not_healthy_log_image = tk.PhotoImage(file="GUI/Images/not-healthy-log.png")
 def populateLogsFrame(frame):
-    for i, (id, health) in enumerate(awsInstancesDemo):
+    for i, (message, messageType) in enumerate(logMessages):
+        log_image = None
+        if logMessages[i][1] == 'processing':
+            log_image = processing_log_image
+        elif logMessages[i][1] == 'finished':
+            log_image = finished_log_image
+        elif logMessages[i][1] == 'healthy':
+            log_image = healthy_log_image
+        elif logMessages[i][1] == 'not healthy':
+            log_image = not_healthy_log_image
         instanceframe = tk.Frame(frame, bd=0, relief=tk.RIDGE, bg="#242424")
-        label_image = tk.Label(instanceframe, image=processing_log_image, bg='#242424')  # Example image reference
-        label_image.pack(padx=18)
-        # label_ID_text = tk.Label(instanceframe, text="ID: " + id, bg='#242424', font=("Helvetica", 10), foreground="#EEEEEE")
-        # label_ID_text.pack()
+        label_image = tk.Label(instanceframe, image=log_image, bg='#242424')  # Example image reference
+        label_image.pack(padx=0)
+        label_text = tk.Label(instanceframe, text=logMessages[i][0], bg='#76ABAE', font=font, foreground="#31363F")
+        label_text.place(relx=0.1, rely=0.47, anchor="w")
         # if health == "healthy":
         #     label_healthy_image = tk.Label(instanceframe, image=healthy_image, bg='#242424')  # Example healthy image reference
         #     label_healthy_image.pack()
