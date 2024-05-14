@@ -1,11 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
-from Componenets import circular_progress_bar
 import customtkinter
 from tkextrafont import Font
 from tkinter import filedialog
 from PIL import Image
 import threading
+
 
 awsInstancesDemo = {"1":  "healthy", "2": "healthy","3": "healthy", "4": "healthy", "5": "healthy"}
 logMessages =[
@@ -62,7 +62,7 @@ def second_page():
             image_finished_label = tk.Label(root, text="Images Finished Processing", font=('Jua', 20, 'bold'), fg="white", bg='#242424')
             image_finished_label.place(x=300, y=230)
 
-            download_images = tk.PhotoImage(file="GUI/Images/download-images-button.png")
+            download_images = tk.PhotoImage(file="Images/download-images-button.png")
             download_images_button = tk.Button(root, image=download_images, borderwidth=0, highlightthickness=0, highlightbackground="#242424", activebackground="#242424")
             download_images_button.place(x=700, y=225)
 
@@ -173,7 +173,7 @@ def second_page():
     # Create the main window
     root = tk.Tk()
     root.title("Enhance IT")
-    font = Font(file="GUI\Fonts\Jua.ttf", family="Jua")
+    font = Font(file="Fonts\Jua.ttf", family="Jua")
 
     style = ttk.Style()
     style.theme_use('clam')
@@ -192,48 +192,53 @@ def second_page():
 
     root.configure(background='#242424')
 
-    left_menu = tk.PhotoImage(file="GUI/Images/left-menu.png")
+    left_menu = tk.PhotoImage(file="Images/left-menu.png")
     left_menu_label = tk.Label(root, image=left_menu, bg='#242424')
     # logo_label.grid(row=0, column=0, padx=100)
     left_menu_label.place(relx=0, y=0, anchor='nw')
 
-    camera_small = tk.PhotoImage(file="GUI/Images/camera-small.png")
+    camera_small = tk.PhotoImage(file="Images/camera-small.png")
     camera_small_label = tk.Label(root, image=camera_small, bg='#31363F')
     camera_small_label.place(x = 70, y = 50)
 
     label_name = tk.Label(root, text="Enhance IT", font=('Jua', 20, 'bold'), fg="white", bg='#31363F')
     label_name.place(x = 50, y = 160)
 
-    button_photo_upload_images = tk.PhotoImage(file="GUI/Images/upload-images-button.png")
-    button_photo_images_uploaded_successfully = tk.PhotoImage(file="GUI/Images/images-uploaded-successfully-button.png")
+    button_photo_upload_images = tk.PhotoImage(file="Images/upload-images-button.png")
+    button_photo_images_uploaded_successfully = tk.PhotoImage(file="Images/images-uploaded-successfully-button.png")
     upload_images_button = tk.Button(root, image=button_photo_upload_images, borderwidth=0, highlightthickness=0, highlightbackground="#31363F",activebackground="#31363F", command=imageUploader)
     upload_images_button.place(x = 47, y = 200)
 
-    apply_image = tk.PhotoImage(file="GUI/Images/apply-button.png")
+    apply_image = tk.PhotoImage(file="Images/apply-button.png")
     apply_button = tk.Button(root, image=apply_image, borderwidth=0, highlightthickness=0, highlightbackground="#31363F",activebackground="#31363F", command=submit_images)
     apply_button.place(x = 25, y = 500)
 
     rebuild_middle_screen()
 
 
-    cloud_server = tk.PhotoImage(file="GUI/Images/cloud-server.png")
-    healthy_image = tk.PhotoImage(file="GUI/Images/healthy.png")
-    not_healthy_image = tk.PhotoImage(file="GUI/Images/not-healthy.png")
+    cloud_server = tk.PhotoImage(file="Images/cloud-server.png")
+    healthy_image = tk.PhotoImage(file="Images/healthy.png")
+    not_healthy_image = tk.PhotoImage(file="Images/not-healthy.png")
 
     Advanced_options = ['Morphological Opening ', 'Morphological Closing', 'Hough Transform', 'Draw Contours']
 
-    Basic_options=['edge_detection',  'color_inversion', 'blur', 'rotate 90', 'rotate 180', 'rotate 270', 'resize 265x265' ,'resize 512x512' ]
+    Basic_options=['edge_detection',  'color_inversion', 'blur', 'rotate', 'resize']
 
     Advancedcombobox = ttk.Combobox(root , style="TCombobox",values=Advanced_options,state="readonly",font=font)
-    Advancedcombobox.place(x=47,y=350)  # Place the combobox in the window
+    Advancedcombobox.place(x=20,y=350)  # Place the combobox in the window
     Advancedcombobox.set("Advanced Operation")
     Advancedcombobox.bind("<<ComboboxSelected>>", on_Advanced_combobox_select)
 
     BasicCombobox =  ttk.Combobox(root , style="TCombobox",values=Basic_options,state="readonly",font=font)
     BasicCombobox.set("Basic Operation")
-    BasicCombobox.place(x=47,y=425)  # Place the combobox in the window
+    BasicCombobox.place(x=20,y=400)  # Place the combobox in the window
     BasicCombobox.bind("<<ComboboxSelected>>", on_Basic_combobox_select)
 
+    parameter_entry = customtkinter.CTkEntry(master=root,
+                               width=180,
+                               height=30,
+                               corner_radius=10, bg_color='#31363F', fg_color="#31363f", font=("Jua", 14), text_color="#EEEEEE", border_color="#76ABAE", placeholder_text="Image Parameter")
+    parameter_entry.place(x=130, y=460, anchor=tk.CENTER)
 
     style = ttk.Style()
     style.theme_use('clam')  # Using a theme that allows color customization
@@ -279,10 +284,10 @@ def second_page():
 
 
     # LOGS FRAME
-    processing_log_image = tk.PhotoImage(file="GUI/Images/processing-log-image.png")
-    finished_log_image = tk.PhotoImage(file="GUI/Images/finished-log-image.png")
-    healthy_log_image = tk.PhotoImage(file="GUI/Images/healthy-log-image.png")
-    not_healthy_log_image = tk.PhotoImage(file="GUI/Images/not-healthy-log.png")
+    processing_log_image = tk.PhotoImage(file="Images/processing-log-image.png")
+    finished_log_image = tk.PhotoImage(file="Images/finished-log-image.png")
+    healthy_log_image = tk.PhotoImage(file="Images/healthy-log-image.png")
+    not_healthy_log_image = tk.PhotoImage(file="Images/not-healthy-log.png")
 
 
     # Configure the style for a vertical scrollbar
