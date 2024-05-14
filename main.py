@@ -14,18 +14,11 @@ import asyncio
 from tkinter import filedialog
 from PIL import Image
 from config import *
-
+import os
 #---------------------------------------- GLOBAL VARIABLES ---------------------------------------------
 terminateAllWindows = False
-awsInstances = {"1":  "healthy", "2": "healthy","3": "healthy", "4": "healthy", "5": "healthy"}
-logs = [
-    ("EC2 Instances are Now Processing the Images", "processing"),
-    ("Images Uploaded to S3 Bucket", "finished"),
-    ("EC2 Instance 4 Is Healthy and Ready to Execute", "healthy"),
-    ("EC2 Instance 4 Created Successfully", "finished"),
-    ("EC2 Instance 3 Went Down, Creating New Instance Soon....", "not healthy"),
-    ("EC2 Instance 3 Is Healthy and Ready to Execute", "healthy"),
-]
+awsInstances = {}
+logs = []
 imagesUploaded= []
 imagesNames = []
 numRequests = 0
@@ -82,7 +75,10 @@ async def send_post_request(session, url, json_data):
 
 async def send_to_load_balancer(image_keys, operation, parameter):
     url = load_balancer_url
-
+    for id, health in aws_access_key_id.items():
+        if health == "healthy":
+            logs.insert(0, (f'EC2 Instance {id} is Now Processing the Images','processing'))
+            populateLogsFrame()
     # List of JSON data payloads to be sent
     json_datas = create_json_data(image_keys, operation, parameter)
     async with aiohttp.ClientSession() as session:
@@ -137,6 +133,14 @@ def create_ec2_instance(target_group_arn):
         }
     ]
     )
+    def instanceReady():
+        time.sleep(20)
+        logs.insert(0,(f'EC2 instance {instance_id} is healthy and ready to execute!', 'healthy'))
+        populateLogsFrame()
+        awsInstances = get_instance_health_dict(target_group_arn)
+        populateframe()
+    thread = threading.Thread(target=instanceReady)
+    thread.start()
     upload_script_ec2(public_ip_address,keyName)
     print("Instance registered to target group:", response)
 
@@ -220,6 +224,7 @@ def fault_tolerance(target_group_arn, threshold,check_interval):
             else:
                 logs.insert(0, (f'EC2 instance {instance_id} went down, Creating another instance..', 'not healthy'))
                 populateLogsFrame()
+                terminate_instance(instance_id)
         if healthy_count < threshold:
             print("Unhealthy instance count is below the threshold. Creating an EC2 instance...")
             for i in range(threshold - healthy_count):
@@ -452,6 +457,8 @@ def second_page():
         global imageOperation
         global imageParameter
         global imagesUploaded
+        global numRequests
+        numRequests = len(imagesUploaded)
         imageParameter = parameter_entry.get()
         systemStatus = 1
         rebuild_middle_screen()
@@ -632,9 +639,14 @@ def firstPage():
         terminateAllWindows = True
         rootMainPage.destroy()
 
-    def open_new_window():
+    def open_new_window(scale_interval, threshold, fault_check_interval):
         # second_page(root, font)
+        global target_group_arn
+        thread = threading.Thread(target=fault_tolerance, args=(target_group_arn,2,fault_check_interval,))
+        thread.start()
         rootMainPage.destroy()
+        threadScale = threading.Thread(target=scale, args = (scale_interval,threshold,target_group_arn,))
+        threadScale.start()
 
     def simulate_loading(rootMainPage):
         global progress
@@ -650,15 +662,11 @@ def firstPage():
         for i in range(17):
             progress.step()
             rootMainPage.after(50)
-        thread = threading.Thread(target=fault_tolerance, args=(target_group_arn,2,fault_check_interval,))
-        thread.start()
 
         label_loading.config(text="Activating Scalability Feature...")
         for i in range(17):
             progress.step()
             rootMainPage.after(50)
-        threadScale = threading.Thread(target=scale, args = (scale_interval,threshold,target_group_arn,))
-        threadScale.start()
 
         label_loading.config(text="Getting Things Ready...")
         while True:
@@ -670,7 +678,7 @@ def firstPage():
                 hiding_progress_image = tk.PhotoImage(file="Images\hide-background.png")
                 hiding_progress_label = tk.Label(rootMainPage, image=hiding_progress_image, bg='#242424')
                 hiding_progress_label.place(x = 140, y = 400)
-                button = tk.Button(rootMainPage, image=continue_button_image, command=open_new_window, borderwidth=0, highlightthickness=0, highlightbackground="#242424", activebackground="#242424")
+                button = tk.Button(rootMainPage, image=continue_button_image, command=lambda: open_new_window(scale_interval, threshold, fault_check_interval), borderwidth=0, highlightthickness=0, highlightbackground="#242424", activebackground="#242424")
                 button.place(x = 372, y = 450)
                 break
 

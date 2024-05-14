@@ -3,7 +3,7 @@ import boto3
 from paramiko import SSHClient
 from scp import SCPClient
 # Connection details
-ip_address = '3.79.62.119'
+ip_address = '3.70.159.245'
 username = 'ubuntu'
 key_filename = 'D:/myEC2Key.pem'
 
