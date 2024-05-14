@@ -1,7 +1,7 @@
 boto3
 paramiko
 scp
-opencv
+opencv-python
 mpi4py
 tk
 customtkinter

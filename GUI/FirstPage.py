@@ -4,6 +4,8 @@ from Componenets import circular_progress_bar
 import customtkinter
 from tkextrafont import Font
 
+import threading
+from SecondPage import second_page
 # Create the main window
 root = tk.Tk()
 root.title("Enhance IT")
@@ -53,11 +55,11 @@ label.grid(row=4,column=0)
 progress = customtkinter.CTkProgressBar(root, orientation="horizontal", width=600, height = 20, progress_color='#76ABAE', fg_color="#EEEEEE", corner_radius=100)
 # progress = ttk.Progressbar(root, style="CustomColor.Horizontal.TProgressbar", orient='horizontal', length=600, mode='determinate')
 progress.grid(row=6, column=0, pady=(0,0))
-
+progress.set(0)
 
 label_loading = tk.Label(root, text="Creating Load Balancer....", font=('Jua', 20, 'bold'), fg="white", bg='#242424')
 label_loading.place(x = 198, y = 480)
-8
+
 # Function to simulate loading
 # def bar():
 #     import time
@@ -69,6 +71,26 @@ label_loading.place(x = 198, y = 480)
 # progress['value'] = 20
 # root.after(100, bar)
 
+def simulate_loading():
+    global progress
+    global thread
+    while True:
+        progress.step()
+        root.after(50)  # Adjust the delay as needed
+        if(progress.get() > 0.9):
+            pass
 
+def open_new_window():
+    # second_page(root, font)
+    root.destroy()
+
+# Start loading progress
+thread = threading.Thread(target=simulate_loading)
+thread.start()
+
+button = tk.Button(root, text="Open New Window", command=open_new_window)
+button.place(x = 498, y = 480)
 # Start the GUI
 root.mainloop()
+
+second_page()
