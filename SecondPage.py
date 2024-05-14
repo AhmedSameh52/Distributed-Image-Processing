@@ -31,7 +31,6 @@ def second_page():
         global download_images_button
         global image_finished_label
         global upload_image_label
-        print(22222)
         if systemStatus == 0:
             upload_image_label = tk.Label(root, text="Upload Image and Choose an Operation", font=('Jua', 26), fg="white", bg='#242424')
             upload_image_label.place(x=330, y=230)
@@ -323,6 +322,5 @@ def second_page():
     bind_mouse_events_logs(frame_logs)
 
     populateLogsFrame(frame_logs)  # Populate the frame with logs
-    # first_page.destroy()
     root.mainloop()
 

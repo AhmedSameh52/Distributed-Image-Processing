@@ -7,3 +7,4 @@ tk
 customtkinter
 tkextrafont
 tk-tools
+aiohttp
