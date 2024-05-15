@@ -73,9 +73,11 @@ async def send_post_request(session, url, json_data):
     async with session.post(url, json=json_data) as response:
         print(f"POST /data {json_data['imagekey']}: {await response.text()}")
 
-async def send_to_load_balancer(image_keys, operation, parameter):
+async def send_to_load_balancer(operation, parameter):
+    global imagesUploaded
+    image_keys = imagesUploaded
     url = load_balancer_url
-    for id, health in aws_access_key_id.items():
+    for id, health in awsInstances.items():
         if health == "healthy":
             logs.insert(0, (f'EC2 Instance {id} is Now Processing the Images','processing'))
             populateLogsFrame()
@@ -88,17 +90,24 @@ async def send_to_load_balancer(image_keys, operation, parameter):
 def upload_to_s3():
     global imagesUploaded
     _,_,_,s3_client = init()
-    for index in range(len(imagesUploaded)):
+    for index, image in enumerate(imagesUploaded):
+
         object_name = f'test-case-{index+1}.jpg'
+        imagesUploaded.append(object_name)
         # Convert the PIL image to a BytesIO object
         image_buffer = io.BytesIO()
-        imagesUploaded[index].save(image_buffer, format='JPEG')
+        image.save(image_buffer, format='JPEG')
         image_buffer.seek(0)
-        s3_client.upload_file(image_buffer, bucket_name, object_name)
-        logs.insert(0,('Image uploaded to s3!', 'finished'))
-        populateLogsFrame()
+
+        # Use upload_fileobj to upload file-like objects
+        s3_client.upload_fileobj(image_buffer, bucket_name, object_name)
+
+        logs.insert(0, ('Image uploaded to S3!', 'finished'))
+        populateLogsFrame()  # Assuming you handle your UI updates her
 
 def create_ec2_instance(target_group_arn):
+    global awsInstances
+    global logs
     client,ec2,ec2_client,_ = init()
 
     # Create EC2 instance
@@ -207,6 +216,8 @@ def get_instance_health_dict(target_group_arn):
     return health_dict
 
 def fault_tolerance(target_group_arn, threshold,check_interval):
+    global awsInstances
+    global logs
     while True:
         client,_,_,_ = init()
         response = client.describe_target_health(TargetGroupArn=target_group_arn)
@@ -458,11 +469,12 @@ def second_page():
         global imageParameter
         global imagesUploaded
         global numRequests
-        numRequests = len(imagesUploaded)
+        global imagesNames
+        numRequests = len(imagesNames)
         imageParameter = parameter_entry.get()
         systemStatus = 1
         rebuild_middle_screen()
-        asyncio.run(send_to_load_balancer(imagesUploaded, imageOperation, imageParameter))
+        asyncio.run(send_to_load_balancer(imageOperation, imageParameter))
 
     def get_downloads_folder():
         if os.name == 'nt':  # For Windows
@@ -499,7 +511,6 @@ def second_page():
         if paths:
             for path in paths:
                 img = Image.open(path)
-                imagesUploaded.append(img)
                 newPath = path.split('/')[-1]
                 imagesNames.append(newPath)
         upload_to_s3()
