@@ -15,6 +15,7 @@ from tkinter import filedialog
 from PIL import Image
 from config import *
 import os
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 #---------------------------------------- GLOBAL VARIABLES ---------------------------------------------
 terminateAllWindows = False
 awsInstances = {}
@@ -46,6 +47,8 @@ second_frame_logs = None
 root = None
 download_images = None
 hide_progress_image = None
+images = []
+
 
 #---------------------------------------- FUNCTIONS DECLERATION ----------------------------------------
 def init():
@@ -58,7 +61,8 @@ def init():
     ec2 = session.resource('ec2')
     ec2_client = session.client('ec2')
     s3_client = session.client('s3')
-    return client,ec2,ec2_client,s3_client
+    s3_resource = session.resource('s3')
+    return client,ec2,ec2_client,s3_client,s3_resource
 
 def create_json_data(image_keys, operation, parameter):
     json_data = []
@@ -85,6 +89,7 @@ async def send_to_load_balancer(operation, parameter):
             logs.insert(0, (f'EC2 Instance {id} is Now Processing the Images','processing'))
             populateLogsFrame()
     # List of JSON data payloads to be sent
+    print(imagesUploaded)
     json_datas = create_json_data(image_keys, operation, parameter)
     print(json_datas)
     async with aiohttp.ClientSession() as session:
@@ -93,26 +98,33 @@ async def send_to_load_balancer(operation, parameter):
 
 def upload_to_s3():
     global imagesUploaded
-    _,_,_,s3_client = init()
-    for index, image in enumerate(imagesUploaded):
+    global imagesNames
+    global images
 
-        object_name = f'test-case-{index+1}.jpg'
+    _,_,_,s3_client,_ = init()
+    for index, image in enumerate(images):
+        # Get the image format and extension
+        format = image.format if image.format else 'JPEG'
+        extension = format.lower()
+
+        object_name = f'test-case-{index+1}.{extension}'
         imagesUploaded.append(object_name)
+
         # Convert the PIL image to a BytesIO object
         image_buffer = io.BytesIO()
-        image.save(image_buffer, format='JPEG')
+        image.save(image_buffer, format=format)
         image_buffer.seek(0)
 
         # Use upload_fileobj to upload file-like objects
         s3_client.upload_fileobj(image_buffer, bucket_name, object_name)
 
         logs.insert(0, ('Image uploaded to S3!', 'finished'))
-        populateLogsFrame()  # Assuming you handle your UI updates her
+        populateLogsFrame()  # Assuming you handle your UI updates here
 
 def create_ec2_instance(target_group_arn):
     global awsInstances
     global logs
-    client,ec2,ec2_client,_ = init()
+    client,ec2,ec2_client,_,_= init()
 
     # Create EC2 instance
     instances = ec2.create_instances(
@@ -128,7 +140,7 @@ def create_ec2_instance(target_group_arn):
     instance_id = instance.id
     logs.insert(0, (f'EC2 Instance with id {instance_id} Created Successfully!','finished'))
     populateLogsFrame()
-    time.sleep(30)
+    time.sleep(20)
 
     # Refresh to get the latest data
     instance.load()
@@ -147,6 +159,7 @@ def create_ec2_instance(target_group_arn):
     ]
     )
     def instanceReady():
+        global awsInstances
         time.sleep(20)
         logs.insert(0,(f'EC2 instance {instance_id} is healthy and ready to execute!', 'healthy'))
         populateLogsFrame()
@@ -159,7 +172,7 @@ def create_ec2_instance(target_group_arn):
 
 def get_number_of_instances_in_target_group(target_group_arn):
     # Initialize the ELBv2 client
-    client,_,_,_ = init()
+    client,_,_,_,_ = init()
 
     # Describe target health to get information about targets in the target group
     response = client.describe_target_health(TargetGroupArn=target_group_arn)
@@ -192,6 +205,7 @@ def scale(scale_interval,threshold, target_group):
             for i in range (desiredVms):
                 thread = threading.Thread(target=create_ec2_instance, args=(target_group,))
                 thread.start()
+        time.sleep(20)
         awsInstances = get_instance_health_dict(target_group)
         populateframe()
         numRequests = 0
@@ -199,12 +213,14 @@ def scale(scale_interval,threshold, target_group):
 
 def terminate_instance(instance_id):
     # Terminate the instance
-    _,ec2,_,_= init()
+    _,ec2,_,_,_= init()
     instance = ec2.Instance(instance_id)
     instance.terminate()
+    logs.insert(0,(f'EC2 instance with ID {instance_id} has been terminated','not healthy'))
+    populateLogsFrame()
 
 def get_instance_health_dict(target_group_arn):
-    client,_,_,_ = init()
+    client,_,_,_,_ = init()
 
     # Call describe_target_health to get the health status of instances in the target group
     response = client.describe_target_health(TargetGroupArn=target_group_arn)
@@ -223,7 +239,7 @@ def fault_tolerance(target_group_arn, threshold,check_interval):
     global awsInstances
     global logs
     while True:
-        client,_,_,_ = init()
+        client,_,_,_,_= init()
         response = client.describe_target_health(TargetGroupArn=target_group_arn)
 
         healthy_count = sum(1 for target in response['TargetHealthDescriptions']
@@ -231,7 +247,6 @@ def fault_tolerance(target_group_arn, threshold,check_interval):
 
         print(f"healthy instances count: {healthy_count}")
         awsInstances = get_instance_health_dict(target_group_arn)
-        time.sleep(10)
         populateframe()
         for instance_id, health_state in awsInstances.items():
             if health_state== 'healthy':
@@ -492,24 +507,42 @@ def second_page():
     def downloadImages():
         global bucket_name
         global imagesNames
-        _,_,_,s3 = init()
+        global imagesUploaded
+        _,_,_,s3,_= init()
+        local_folder = get_downloads_folder()
 
-        for i in range(len(imagesNames)):
-            if not os.path.exists("local_folder"):
-                os.makedirs(local_folder)
+        if not os.path.exists(local_folder):
+            os.makedirs(local_folder)
+        
+        for image_name in imagesUploaded:
+            try:
+                image_key = image_name.replace('.png', '', 1)
+                processed_image_name = image_key + '_processed.jpg'
 
-            image_key = imagesNames[i].replace('.png', '', 1)
-            processed_image_name = image_key + '_processed.jpg'
+                filename = os.path.basename(processed_image_name)
+                local_path = os.path.join(local_folder, filename)
 
-            local_folder = get_downloads_folder()
-            filename = os.path.basename(processed_image_name)
-            local_path = os.path.join(local_folder, filename)
+                print(f"Downloading {processed_image_name} to {local_path}")
+                s3.download_file(bucket_name, processed_image_name, local_path)
+                print(f"Successfully downloaded {processed_image_name}")
 
-            s3.download_file(bucket_name, processed_image_name, local_path)
+            except NoCredentialsError:
+                print("Credentials not available for AWS S3.")
+                break
+
+            except PartialCredentialsError:
+                print("Incomplete credentials for AWS S3.")
+                break
+
+            except Exception as e:
+                print(f"An error occurred: {e}")
 
     def imageUploader():
         global imagesUploaded
         global imagesNames
+        global images
+        images = []
+        imagesNames = []
         imagesUploaded = []
         fileTypes = [("Image files", "*.png;*.jpg;*.jpeg")]
         paths = filedialog.askopenfilenames(filetypes=fileTypes)
@@ -520,6 +553,7 @@ def second_page():
                 img = Image.open(path)
                 newPath = path.split('/')[-1]
                 imagesNames.append(newPath)
+                images.append(img)
         upload_to_s3()
         upload_images_button.config(image=button_photo_images_uploaded_successfully)
 
@@ -586,7 +620,7 @@ def second_page():
     healthy_image = tk.PhotoImage(file="Images/healthy.png")
     not_healthy_image = tk.PhotoImage(file="Images/not-healthy.png")
 
-    Advanced_options = ['Morphological Opening ', 'Morphological Closing', 'Hough Transform', 'Draw Contours']
+    Advanced_options = ['closing', 'opening', 'line_detection', 'contour']
 
     Basic_options=['edge_detection',  'color_inversion', 'blur', 'rotate', 'resize']
 
@@ -671,8 +705,8 @@ def firstPage():
         global label_loading
         global target_group_arn
         global continue_button_image
-        fault_check_interval = 360
-        scale_interval = 360
+        fault_check_interval = 240
+        scale_interval = 260
         threshold = 5
         target_group_arn = target_group_arn
 

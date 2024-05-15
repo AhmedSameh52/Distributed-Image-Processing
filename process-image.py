@@ -27,6 +27,7 @@ def get_image_from_bucket(s3_client, image_key):
         return img
 
 def process_image(operation, image,image_parameter):
+    result = None
     # Perform the specified operation
     if operation == 'edge_detection':
         result = cv2.Canny(image, 100, 200)
