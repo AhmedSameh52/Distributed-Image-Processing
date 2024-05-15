@@ -45,6 +45,7 @@ second_frame_instances = None
 second_frame_logs = None
 root = None
 download_images = None
+hide_progress_image = None
 
 #---------------------------------------- FUNCTIONS DECLERATION ----------------------------------------
 def init():
@@ -75,14 +76,17 @@ async def send_post_request(session, url, json_data):
 
 async def send_to_load_balancer(operation, parameter):
     global imagesUploaded
+    global load_balancer_url
     image_keys = imagesUploaded
     url = load_balancer_url
+    print(url)
     for id, health in awsInstances.items():
         if health == "healthy":
             logs.insert(0, (f'EC2 Instance {id} is Now Processing the Images','processing'))
             populateLogsFrame()
     # List of JSON data payloads to be sent
     json_datas = create_json_data(image_keys, operation, parameter)
+    print(json_datas)
     async with aiohttp.ClientSession() as session:
         tasks = [send_post_request(session, url, json) for json in json_datas]
         await asyncio.gather(*tasks)
@@ -227,6 +231,7 @@ def fault_tolerance(target_group_arn, threshold,check_interval):
 
         print(f"healthy instances count: {healthy_count}")
         awsInstances = get_instance_health_dict(target_group_arn)
+        time.sleep(10)
         populateframe()
         for instance_id, health_state in awsInstances.items():
             if health_state== 'healthy':
@@ -406,6 +411,7 @@ def second_page():
     global systemStatus
     global root
     global download_images
+    global hide_progress_image
 
     def rebuild_middle_screen():
         global download_images_button
@@ -414,6 +420,7 @@ def second_page():
         global root
         global systemStatus
         global download_images
+        global hide_progress_image
 
         def simulateProgressBar():
             global systemStatus
