@@ -18,7 +18,7 @@ import os
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 #---------------------------------------- GLOBAL VARIABLES ---------------------------------------------
 terminateAllWindows = False
-awsInstances = {}
+awsInstances = {"i-1412412dwqdqddwwwdwdw41412a":  "healthy", "i-1412412dwqdqddwwwdwdw41412adsaddas": "healthy","i-1412412dwqdqddwwwdwdw41412a231312": "healthy", "i-1412412dwqdqddwwwdwdw41412assadxz": "healthy", "i-1412412dwqdqddwwwdwdw41412a12sqA": "healthy"}
 logs = []
 imagesUploaded= []
 imagesNames = []
@@ -48,7 +48,9 @@ root = None
 download_images = None
 hide_progress_image = None
 images = []
-
+button_photo_upload_images = None
+upload_images_button = None
+global hide_progress_label
 
 #---------------------------------------- FUNCTIONS DECLERATION ----------------------------------------
 def init():
@@ -83,13 +85,11 @@ async def send_to_load_balancer(operation, parameter):
     global load_balancer_url
     image_keys = imagesUploaded
     url = load_balancer_url
-    print(url)
     for id, health in awsInstances.items():
         if health == "healthy":
             logs.insert(0, (f'EC2 Instance {id} is Now Processing the Images','processing'))
             populateLogsFrame()
     # List of JSON data payloads to be sent
-    print(imagesUploaded)
     json_datas = create_json_data(image_keys, operation, parameter)
     print(json_datas)
     async with aiohttp.ClientSession() as session:
@@ -233,7 +233,15 @@ def get_instance_health_dict(target_group_arn):
         # Add the target ID and its health state to the dictionary
         health_dict[target_health_description['Target']['Id']] = target_health_description['TargetHealth']['State']
 
-    return health_dict
+    new_health_dict = {}
+    for key, value in health_dict.items():
+        # Get the last 6 characters of the current key
+        last_six_chars = key[-6:]
+        # Create a new key in the format i-abcdef
+        new_key = f"i-{last_six_chars}"
+        # Add the new key-value pair to the new dictionary
+        new_health_dict[new_key] = value
+    return new_health_dict
 
 def fault_tolerance(target_group_arn, threshold,check_interval):
     global awsInstances
@@ -427,6 +435,9 @@ def second_page():
     global root
     global download_images
     global hide_progress_image
+    global button_photo_upload_images
+    global upload_images_button
+    global hide_progress_label
 
     def rebuild_middle_screen():
         global download_images_button
@@ -436,12 +447,13 @@ def second_page():
         global systemStatus
         global download_images
         global hide_progress_image
+        global hide_progress_label
 
         def simulateProgressBar():
             global systemStatus
             while True:
                 progress_inside.step()
-                root.after(100)
+                time.sleep(0.2)
                 if progress_inside.get() > 0.95:
                     systemStatus = 2
                     rebuild_middle_screen()
@@ -456,9 +468,13 @@ def second_page():
                 upload_image_label.place_forget()
                 progress_inside.place_forget()
                 progress_bar_label.place_forget()
+                image_finished_label.forget()
+                download_images_button.forget()
             except NameError:
                 pass
-
+            hide_progress_image = tk.PhotoImage(file="Images/hide-inside-progress-bar2.png")
+            hide_progress_label = tk.Label(root, image=hide_progress_image, font=('Jua', 20, 'bold'), fg="white", bg='#242424')
+            hide_progress_label.place(x=300, y=225)
             progress_inside = customtkinter.CTkProgressBar(root, orientation="horizontal", width=600, height=15, progress_color='#76ABAE', fg_color="#EEEEEE", corner_radius=100)
             progress_inside.place(x=325, y=280)
             progress_bar_label = tk.Label(root, text="Processing...", font=('Jua', 20, 'bold'), fg="white", bg='#242424')
@@ -492,10 +508,23 @@ def second_page():
         global imagesUploaded
         global numRequests
         global imagesNames
+        global button_photo_upload_images
+        global upload_images_button
+        if len(imagesNames) == 0:
+            return
         numRequests = len(imagesNames)
         imageParameter = parameter_entry.get()
+        upload_images_button.config(image=button_photo_upload_images)
         systemStatus = 1
-        rebuild_middle_screen()
+        thread = threading.Thread(target=rebuild_middle_screen)
+        thread.start()
+        thread = threading.Thread(target=submit_images_thread_function)
+        thread.start()
+        imagesNames = []
+
+    def submit_images_thread_function():
+        global imageOperation
+        global imageParameter
         asyncio.run(send_to_load_balancer(imageOperation, imageParameter))
 
     def get_downloads_folder():
@@ -513,7 +542,7 @@ def second_page():
 
         if not os.path.exists(local_folder):
             os.makedirs(local_folder)
-        
+
         for image_name in imagesUploaded:
             try:
                 image_key = image_name.replace('.png', '', 1)
@@ -541,11 +570,13 @@ def second_page():
         global imagesUploaded
         global imagesNames
         global images
+        fileTypes = [("Image files", "*.png;*.jpg;*.jpeg")]
+        paths = filedialog.askopenfilenames(filetypes=fileTypes)
+        if not paths:
+            return
         images = []
         imagesNames = []
         imagesUploaded = []
-        fileTypes = [("Image files", "*.png;*.jpg;*.jpeg")]
-        paths = filedialog.askopenfilenames(filetypes=fileTypes)
 
         # if files are selected
         if paths:
@@ -554,7 +585,8 @@ def second_page():
                 newPath = path.split('/')[-1]
                 imagesNames.append(newPath)
                 images.append(img)
-        upload_to_s3()
+        thread = threading.Thread(target=upload_to_s3)
+        thread.start()
         upload_images_button.config(image=button_photo_images_uploaded_successfully)
 
     def on_Advanced_combobox_select(choice):
@@ -571,6 +603,7 @@ def second_page():
 
     # Create the main window
     root = tk.Tk()
+    root.resizable(False, False)
     root.title("Enhance IT")
 
     font = Font(file="Fonts\Jua.ttf", family="Jua")
@@ -692,13 +725,12 @@ def firstPage():
         rootMainPage.destroy()
 
     def open_new_window(scale_interval, threshold, fault_check_interval):
-        # second_page(root, font)
         global target_group_arn
         thread = threading.Thread(target=fault_tolerance, args=(target_group_arn,2,fault_check_interval,))
         thread.start()
-        rootMainPage.destroy()
         threadScale = threading.Thread(target=scale, args = (scale_interval,threshold,target_group_arn,))
         threadScale.start()
+        rootMainPage.destroy()
 
     def simulate_loading(rootMainPage):
         global progress
@@ -736,6 +768,7 @@ def firstPage():
 
     rootMainPage = tk.Tk()
     rootMainPage.title("Enhance IT")
+    rootMainPage.resizable(False, False)
     font = Font(file="Fonts\Jua.ttf", family="Jua")
 
     rootMainPage.columnconfigure(0, weight=1)
