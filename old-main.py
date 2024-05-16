@@ -42,7 +42,7 @@ async def send_post_request(session, url, json_data):
         print(f"POST /data {json_data['imagekey']}: {await response.text()}")
 
 async def send_to_load_balancer(image_keys, operation, parameter):
-    url = 'http://load-balancer-1-910858959.eu-central-1.elb.amazonaws.com/data'
+    url = 'http://load-balancer-216628168.eu-central-1.elb.amazonaws.com/data'
 
     # List of JSON data payloads to be sent
     json_datas = create_json_data(image_keys, operation, parameter)
@@ -189,20 +189,12 @@ def fault_tolerance(target_group_arn, threshold,check_interval):
 
 
 if __name__ == '__main__':
-    # check_interval = 360
-    # scale_interval = 360
-    # threshold = 5
+    check_interval = 260
     target_group_arn = 'arn:aws:elasticloadbalancing:eu-central-1:058264462378:targetgroup/target-group-2/1628f616d766de4d'
-    # awsInstances = get_instance_health_dict(target_group_arn)
-    # threadScale = threading.Thread(target=scale, args = (scale_interval,threshold,target_group_arn,))
-    # thread = threading.Thread(target=fault_tolerance, args=(target_group_arn,2,check_interval,))
-    # threadScale.start()
-    # thread.start()
-    # time.sleep(300)
-    # numRequests = 20
-    # time.sleep(400)
-    # numRequests = 5
-    # thread.join()
+    awsInstances = get_instance_health_dict(target_group_arn)
+    thread = threading.Thread(target=fault_tolerance, args=(target_group_arn,2,check_interval,))
+    thread.start()
+    thread.join()
 
 
 

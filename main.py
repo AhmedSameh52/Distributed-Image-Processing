@@ -18,10 +18,11 @@ import os
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 #---------------------------------------- GLOBAL VARIABLES ---------------------------------------------
 terminateAllWindows = False
-awsInstances = {"i-1412412dwqdqddwwwdwdw41412a":  "healthy", "i-1412412dwqdqddwwwdwdw41412adsaddas": "healthy","i-1412412dwqdqddwwwdwdw41412a231312": "healthy", "i-1412412dwqdqddwwwdwdw41412assadxz": "healthy", "i-1412412dwqdqddwwwdwdw41412a12sqA": "healthy"}
+awsInstances = {}
 logs = []
 imagesUploaded= []
 imagesNames = []
+new_health_dict = {}
 numRequests = 0
 systemStatus = 0
 upload_image_label = None
@@ -84,8 +85,9 @@ async def send_to_load_balancer(operation, parameter):
     global imagesUploaded
     global load_balancer_url
     image_keys = imagesUploaded
+    global new_health_dict
     url = load_balancer_url
-    for id, health in awsInstances.items():
+    for id, health in new_health_dict.items():
         if health == "healthy":
             logs.insert(0, (f'EC2 Instance {id} is Now Processing the Images','processing'))
             populateLogsFrame()
@@ -138,7 +140,12 @@ def create_ec2_instance(target_group_arn):
     instance = instances[0]
     instance.wait_until_running()
     instance_id = instance.id
-    logs.insert(0, (f'EC2 Instance with id {instance_id} Created Successfully!','finished'))
+        # Get the last 6 characters of the current key
+    last_six_chars = instance_id[-6:]
+    # Create a new key in the format i-abcdef
+    new_key = f"i-{last_six_chars}"
+    # Add the new key-value pair to the new dictionary
+    logs.insert(0, (f'EC2 Instance with id {new_key} Created Successfully!','finished'))
     populateLogsFrame()
     time.sleep(20)
 
@@ -161,7 +168,7 @@ def create_ec2_instance(target_group_arn):
     def instanceReady():
         global awsInstances
         time.sleep(20)
-        logs.insert(0,(f'EC2 instance {instance_id} is healthy and ready to execute!', 'healthy'))
+        logs.insert(0,(f'EC2 instance {new_key} is healthy and ready to execute!', 'healthy'))
         populateLogsFrame()
         awsInstances = get_instance_health_dict(target_group_arn)
         populateframe()
@@ -192,15 +199,22 @@ def scale(scale_interval,threshold, target_group):
             numVms = (numRequests // threshold) + 1
         desiredVms = numVms - numVmsRunning
         print(f'numVmsRunning= {numVmsRunning}, numVms = {numVms}, desiredVms = {desiredVms}, numRequests = {numRequests}')
+       
         if desiredVms < 0 :
+            tempIds = []
             desiredVms = desiredVms * -1
 
             for i in range(desiredVms):
                 if numVmsRunning <= 2:
                     break
-                terminate_instance(list(awsInstances.keys())[i])
-
+                terminate_instance(list(awsInstances.keys())[i],list(new_health_dict.keys())[i])
+                tempIds.append(list(new_health_dict.keys())[i])
+            
                 numVmsRunning = numVmsRunning -1
+            for i in tempIds:
+                del new_health_dict[i]
+                populateframe()
+                
         else:
             for i in range (desiredVms):
                 thread = threading.Thread(target=create_ec2_instance, args=(target_group,))
@@ -211,15 +225,18 @@ def scale(scale_interval,threshold, target_group):
         numRequests = 0
         time.sleep(scale_interval)
 
-def terminate_instance(instance_id):
+def terminate_instance(instance_id,GUIinstanceId):
+    global new_health_dict
     # Terminate the instance
     _,ec2,_,_,_= init()
     instance = ec2.Instance(instance_id)
     instance.terminate()
-    logs.insert(0,(f'EC2 instance with ID {instance_id} has been terminated','not healthy'))
+    logs.insert(0,(f'EC2 instance with ID {GUIinstanceId} has been terminated','not healthy'))
     populateLogsFrame()
 
+
 def get_instance_health_dict(target_group_arn):
+    global new_health_dict
     client,_,_,_,_ = init()
 
     # Call describe_target_health to get the health status of instances in the target group
@@ -233,7 +250,6 @@ def get_instance_health_dict(target_group_arn):
         # Add the target ID and its health state to the dictionary
         health_dict[target_health_description['Target']['Id']] = target_health_description['TargetHealth']['State']
 
-    new_health_dict = {}
     for key, value in health_dict.items():
         # Get the last 6 characters of the current key
         last_six_chars = key[-6:]
@@ -241,11 +257,12 @@ def get_instance_health_dict(target_group_arn):
         new_key = f"i-{last_six_chars}"
         # Add the new key-value pair to the new dictionary
         new_health_dict[new_key] = value
-    return new_health_dict
+    return health_dict
 
 def fault_tolerance(target_group_arn, threshold,check_interval):
     global awsInstances
     global logs
+    global new_health_dict
     while True:
         client,_,_,_,_= init()
         response = client.describe_target_health(TargetGroupArn=target_group_arn)
@@ -256,14 +273,22 @@ def fault_tolerance(target_group_arn, threshold,check_interval):
         print(f"healthy instances count: {healthy_count}")
         awsInstances = get_instance_health_dict(target_group_arn)
         populateframe()
-        for instance_id, health_state in awsInstances.items():
-            if health_state== 'healthy':
-                logs.insert(0,(f'EC2 instance {instance_id} is healthy and ready to execute!', 'healthy'))
-                populateLogsFrame()
-            else:
-                logs.insert(0, (f'EC2 instance {instance_id} went down, Creating another instance..', 'not healthy'))
-                populateLogsFrame()
-                terminate_instance(instance_id)
+        tempIds =[]
+        for index, (instance_id,health) in enumerate(awsInstances.items()):
+            try:
+                if health== 'healthy':
+                    logs.insert(0,(f'EC2 instance {list(new_health_dict.keys())[index]} is healthy and ready to execute!', 'healthy'))
+                    populateLogsFrame()
+                else:
+                    logs.insert(0, (f'EC2 instance {list(new_health_dict.keys())[index]} went down, Creating another instance..', 'not healthy'))
+                    populateLogsFrame()
+                    terminate_instance(instance_id,list(new_health_dict.keys())[index])
+                    tempIds.append(list(new_health_dict.keys())[index])
+            except:
+                continue
+        for id in tempIds:
+            del new_health_dict[id]
+            populateframe()
         if healthy_count < threshold:
             print("Unhealthy instance count is below the threshold. Creating an EC2 instance...")
             for i in range(threshold - healthy_count):
@@ -282,6 +307,7 @@ def populateframe():
     global not_healthy_image
     global root
     global canvas
+    global new_health_dict
 
     main_frame = tk.Frame(root, height=200, width=600)  # Set the size of the area for the canvas and scrollbar
     main_frame.pack_propagate(False)  # Prevents the frame from resizing to fit its contents
@@ -311,7 +337,7 @@ def populateframe():
 
     second_frame_instances.bind("<Configure>", lambda event, canvas=canvas: canvas.configure(scrollregion=canvas.bbox("all")))
 
-    for id, health  in awsInstances.items():
+    for id, health  in new_health_dict.items():
         instanceframe = tk.Frame(second_frame_instances, bd=0, relief=tk.RIDGE, bg="#242424")
         label_image = tk.Label(instanceframe, image=cloud_server, bg='#242424')
         label_image.pack(padx=22)
@@ -337,6 +363,7 @@ def populateLogsFrame():
     global not_healthy_log_image
     global root
     global canvas_logs
+    global new_health_dict
 
     main_frame_logs = tk.Frame(root, height=200, width=700)  # Set the size of the area for the canvas and scrollbar
     main_frame_logs.pack_propagate(False)  # Prevents the frame from resizing to fit its contents
